@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扔硬币 · 1% 的奇迹</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #141414;
+      transition: background 1.2s ease;
+      color: #d4d4d4;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    .container {
+      width: 100%;
+      max-width: 520px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: #666;
+      letter-spacing: 0.08em;
+      margin-bottom: 32px;
+    }
+
+    /* 硬币 — 银灰写实风格，3D翻转 */
+    .coin-wrapper {
+      perspective: 700px;
+      margin-bottom: 18px;
+      display: inline-block;
+    }
+    .coin {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      display: inline-block;
+      cursor: pointer;
+    }
+    .coin.flipping {
+      animation: toss 0.75s ease-in-out;
+    }
+    .coin.shake {
+      animation: shake 0.35s ease;
+    }
+    .coin.shake-heads {
+      animation: shake-heads 0.35s ease;
+    }
+    @keyframes shake {
+      0%   { transform: rotateY(180deg) translateX(0); }
+      20%  { transform: rotateY(180deg) translateX(-6px) rotate(-2deg); }
+      40%  { transform: rotateY(180deg) translateX(5px) rotate(1.5deg); }
+      60%  { transform: rotateY(180deg) translateX(-4px) rotate(-1deg); }
+      80%  { transform: rotateY(180deg) translateX(3px) rotate(0.5deg); }
+      100% { transform: rotateY(180deg) translateX(0); }
+    }
+    @keyframes shake-heads {
+      0%   { transform: rotateY(0deg) translateX(0); }
+      20%  { transform: rotateY(0deg) translateX(-6px) rotate(-2deg); }
+      40%  { transform: rotateY(0deg) translateX(5px) rotate(1.5deg); }
+      60%  { transform: rotateY(0deg) translateX(-4px) rotate(-1deg); }
+      80%  { transform: rotateY(0deg) translateX(3px) rotate(0.5deg); }
+      100% { transform: rotateY(0deg) translateX(0); }
+    }
+    @keyframes toss {
+      0%   { transform: rotateY(0deg) translateY(0); }
+      12%  { transform: rotateY(200deg) translateY(-40px); }
+      25%  { transform: rotateY(400deg) translateY(-70px); }
+      40%  { transform: rotateY(700deg) translateY(-85px); }
+      55%  { transform: rotateY(950deg) translateY(-65px); }
+      75%  { transform: rotateY(1150deg) translateY(-30px); }
+      100% { transform: rotateY(1260deg) translateY(0); }
+    }
+
+    .coin-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border: 2.5px solid #888;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* 正面 — 金色暖调 */
+    .coin-front {
+      background: radial-gradient(ellipse at 35% 30%, #f2e8c4 0%, #d6c69e 25%, #baaa7e 50%, #9c8c64 75%, #7e6e4e 100%);
+      box-shadow:
+        0 0 32px rgba(255,215,0,0.07),
+        inset 0 -10px 24px rgba(0,0,0,0.2),
+        inset 0 10px 24px rgba(255,255,220,0.12);
+      border-color: #b8a87a;
+    }
+    .coin-front::before {
+      content: '';
+      position: absolute;
+      width: 82%;
+      height: 82%;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,220,0.18);
+      pointer-events: none;
+    }
+    .coin-front::after {
+      content: '';
+      position: absolute;
+      width: 94%;
+      height: 94%;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.07);
+      pointer-events: none;
+    }
+
+    /* 反面 — 冷灰银调 */
+    .coin-back {
+      background: radial-gradient(ellipse at 35% 30%, #e8e8e8 0%, #d0d0d0 25%, #b0b0b0 50%, #909090 75%, #707070 100%);
+      transform: rotateY(180deg);
+      box-shadow:
+        0 0 32px rgba(200,200,200,0.05),
+        inset 0 -10px 24px rgba(0,0,0,0.25),
+        inset 0 10px 24px rgba(255,255,255,0.12);
+      border-color: #a0a0a0;
+    }
+    .coin-back::before {
+      content: '';
+      position: absolute;
+      width: 82%;
+      height: 82%;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.12);
+      pointer-events: none;
+    }
+    .coin-back::after {
+      content: '';
+      position: absolute;
+      width: 94%;
+      height: 94%;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.05);
+      pointer-events: none;
+    }
+
+    .coin-char {
+      font-size: 3.6rem;
+      font-weight: 900;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .coin-front .coin-char { color: #5a4a2a; }
+    .coin-back .coin-char  { color: #3a3a3a; }
+
+    /* 环形装饰线 */
+    .coin-ring {
+      position: absolute;
+      width: 62%;
+      height: 62%;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .coin-front .coin-ring { border: 1.5px solid rgba(255,255,200,0.10); }
+    .coin-back .coin-ring  { border: 1.5px solid rgba(255,255,255,0.07); }
+
+    .coin-label {
+      margin-top: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #666;
+      letter-spacing: 0.15em;
+      transition: color 0.3s;
+    }
+    .coin-label.is-heads { color: #d4b86a; }
+    .coin-label.is-tails { color: #8a8a8a; }
+
+    /* 按钮 */
+    .btn {
+      display: inline-block;
+      padding: 14px 48px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #eee;
+      background: linear-gradient(135deg, #3a2a1a, #2a1a0a);
+      border: 1px solid #5a4a3a;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.08em;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      user-select: none;
+    }
+    .btn:hover {
+      background: linear-gradient(135deg, #4a3a2a, #3a2a1a);
+      border-color: #8a7a6a;
+      transform: translateY(-2px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn-small {
+      padding: 8px 24px;
+      font-size: 0.85rem;
+      background: transparent;
+      border-color: #3a3a3a;
+      color: #777;
+    }
+    .btn-small:hover {
+      border-color: #666;
+      color: #aaa;
+    }
+    .actions {
+      margin: 28px 0;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* 历史记录 */
+    .history-wrap {
+      margin-top: 32px;
+      text-align: left;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #2a2a2a;
+      margin-bottom: 8px;
+    }
+    .history-title {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .history-count {
+      font-size: 0.8rem;
+      color: #555;
+    }
+    #historyList {
+      list-style: none;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    #historyList::-webkit-scrollbar {
+      width: 4px;
+    }
+    #historyList::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #historyList::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 2px;
+    }
+    .history-item {
+      padding: 6px 8px;
+      font-size: 0.9rem;
+      color: #999;
+      border-bottom: 1px solid #1e1e1e;
+      display: flex;
+      justify-content: space-between;
+      animation: slideIn 0.2s ease;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    .history-item .tag {
+      font-size: 0.75rem;
+      padding: 1px 8px;
+      border-radius: 10px;
+    }
+    .tag-heads {
+      color: #e8c84a;
+      background: rgba(232,200,74,0.1);
+    }
+    .tag-tails {
+      color: #8a7a6a;
+      background: rgba(138,122,106,0.1);
+    }
+
+    @keyframes slideIn {
+      0%   { opacity: 0; transform: translateX(-8px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    /* 弹窗 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #1e1e1e;
+      border: 1px solid #3a3a3a;
+      border-radius: 20px;
+      padding: 32px 28px 24px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      animation: modalPop 0.3s ease;
+    }
+    @keyframes modalPop {
+      0%   { opacity: 0; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .modal-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .modal-text {
+      font-size: 1.15rem;
+      color: #ccc;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .modal-btn {
+      padding: 10px 36px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ddd;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-btn:hover {
+      background: #3a3a3a;
+      border-color: #666;
+    }
+
+    /* streak 指示器 */
+    .streak-indicator {
+      margin: 12px 0 4px;
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .streak-indicator .num {
+      color: #8a7a6a;
+      font-weight: 700;
+    }
+
+    .empty-note {
+      color: #444;
+      font-size: 0.85rem;
+      padding: 24px 0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- 硬币 -->
+  <div class="coin-wrapper">
+    <div class="coin" id="coin">
+      <div class="coin-face coin-front"><span class="coin-char">正</span><span class="coin-ring"></span></div>
+      <div class="coin-face coin-back"><span class="coin-char">反</span><span class="coin-ring"></span></div>
+    </div>
+    <div class="coin-label is-heads" id="coinLabel">正面</div>
+  </div>
+
+  <!-- 按钮 -->
+  <div class="actions">
+    <button class="btn" id="flipBtn">扔硬币</button>
+  </div>
+
+  <!-- streak -->
+  <div class="streak-indicator" id="streakIndicator">
+    连续反面：<span class="num" id="streakCount">0</span> 次
+  </div>
+
+  <!-- 历史 -->
+  <div class="history-wrap">
+    <div class="history-header">
+      <span class="history-title">📜 扔硬币记录</span>
+      <span class="history-count" id="historyCount">共 0 次</span>
+    </div>
+    <ul id="historyList">
+      <li class="empty-note">还没有记录，扔一次试试？</li>
+    </ul>
+    <div class="actions" style="margin-top:12px">
+      <button class="btn btn-small" id="resetBtn">重置记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-icon" id="modalIcon">😏</div>
+    <div class="modal-text" id="modalText">你确定这不是一枚双面反的硬币？</div>
+    <button class="modal-btn" id="modalBtn">知道了 😮‍💨</button>
+  </div>
+</div>
+
+<script>
+  // ===== 核心数据 =====
+  const TOTAL_SIDES = 2;
+  const HEADS_PROB = 0.01; // 1%
+  let history = [];        // true=正面, false=反面
+  let streak = 0;          // 连续反面次数
+  let totalFlips = 0;
+  let headsCount = 0;
+  let isFlipping = false;
+
+  // ===== 按钮文字随次数变化 =====
+  function getButtonText() {
+    if (totalFlips >= 80) return '🤡 我已经麻木了';
+    if (totalFlips >= 60) return '😑 继续吧……';
+    if (totalFlips >= 40) return '🤨 你玩上瘾了是吧';
+    if (totalFlips >= 30) return '你是不是在逗我';
+    if (totalFlips >= 20) return '再来！';
+    if (totalFlips >= 15) return '我就不信了';
+    if (totalFlips >= 10) return '我偏不信';
+    return '扔硬币';
+  }
+
+  // ===== 背景色随连续反面加深 =====
+  function updateBackground() {
+    let color = '#141414'; // 默认深灰
+    if (streak >= 100) color = '#1a0808';
+    else if (streak >= 80) color = '#1c0a0a';
+    else if (streak >= 60) color = '#1e0c0c';
+    else if (streak >= 50) color = '#200e0e';
+    else if (streak >= 40) color = '#221010';
+    else if (streak >= 30) color = '#241212';
+    else if (streak >= 25) color = '#261414';
+    else if (streak >= 20) color = '#281616';
+    else if (streak >= 15) color = '#2a1818';
+    document.body.style.background = color;
+  }
+
+  // ===== DOM =====
+  const coin = document.getElementById('coin');
+  const coinLabel = document.getElementById('coinLabel');
+  const flipBtn = document.getElementById('flipBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const historyList = document.getElementById('historyList');
+  const historyCount = document.getElementById('historyCount');
+  const streakCount = document.getElementById('streakCount');
+  const streakIndicator = document.getElementById('streakIndicator');
+  const modal = document.getElementById('modal');
+  const modalIcon = document.getElementById('modalIcon');
+  const modalText = document.getElementById('modalText');
+  const modalBtn = document.getElementById('modalBtn');
+
+  // ===== 扔硬币逻辑 =====
+  function toss() {
+    return Math.random() < HEADS_PROB; // true=正面
+  }
+
+  function flip() {
+    if (isFlipping) return;
+    isFlipping = true;
+    flipBtn.disabled = true;
+    flipBtn.style.opacity = '0.4';
+
+    // 先随机决定结果
+    const isHeads = toss();
+
+    // 翻转动画
+    coin.classList.remove('flipping');
+    void coin.offsetHeight;
+    coin.classList.add('flipping');
+
+    setTimeout(() => {
+      coin.classList.remove('flipping');
+
+      // 根据结果显示最终旋转状态
+      // 正面 -> rotateY(0), 反面 -> rotateY(180deg)
+      coin.style.transform = isHeads ? 'rotateY(0deg)' : 'rotateY(180deg)';
+
+      // 更新label
+      coinLabel.textContent = isHeads ? '正面' : '反面';
+      coinLabel.className = 'coin-label ' + (isHeads ? 'is-heads' : 'is-tails');
+
+      // 硬币落地震动
+      coin.classList.remove('shake');
+      void coin.offsetHeight;
+      // 根据最终朝向选对应的shake动画
+      const shakeClass = isHeads ? 'shake-heads' : 'shake';
+      coin.classList.add(shakeClass);
+      setTimeout(() => coin.classList.remove(shakeClass), 400);
+
+      // 记录
+      totalFlips++;
+      if (isHeads) {
+        headsCount++;
+        streak = 0;
+      } else {
+        streak++;
+      }
+      history.push(isHeads);
+
+      // 更新UI
+      updateStats();
+      updateBackground();
+      updateButton();
+      renderHistory();
+
+      // 弹窗检查
+      checkSpecialEvents(isHeads);
+
+      isFlipping = false;
+      flipBtn.disabled = false;
+      flipBtn.style.opacity = '1';
+    }, 750);
+  }
+
+  // ===== 特殊事件 =====
+  function checkSpecialEvents(isHeads) {
+    if (isHeads) {
+      // 奇迹事件 (1%概率触发)
+      showModal('🎉', '❗️ 奇迹发生了！你中了 1% 的概率！快去截图发朋友圈！🎉');
+      return;
+    }
+
+    // 连续反面弹窗
+    if (streak === 10) {
+      showModal('😏', '你确定这不是一枚双面反的硬币？😏');
+    } else if (streak === 20) {
+      showModal('💀', '你是不是被诅咒了？还是说这个世界就是假的？');
+    } else if (streak === 30) {
+      showModal('🌀', '你已经超越了人类极限……建议你去买彩票（反面那种）');
+    } else if (streak === 40) {
+      showModal('🫠', '我宣布：这不是硬币，这是一个只能落地的铁片。');
+    } else if (streak === 50) {
+      showModal('🔥', '50次了。你是我见过最执着（或者说最倒霉）的人。');
+    } else if (streak === 66) {
+      showModal('👹', '666 —— 魔鬼在你的硬币里住下了。');
+    } else if (streak === 77) {
+      showModal('🎰', '77次反面……你玩的是老虎机吧？？');
+    } else if (streak === 88) {
+      showModal('🐙', '88 —— 发发发！反面发大财！');
+    } else if (streak === 99) {
+      showModal('😱', '99次反面！！！就差1次就100了！！！你故意的吧？？？');
+    } else if (streak === 100) {
+      showModal('🏆', '100次反面！你创造了奇迹——反向奇迹。建议申请吉尼斯。');
+    } else if (streak > 0 && streak % 10 === 0) {
+      showModal('🤯', `连续 ${streak} 次反面……我已经不知道说什么了。`);
+    }
+  }
+
+  // ===== 弹窗 =====
+  function showModal(icon, text) {
+    modalIcon.textContent = icon;
+    modalText.textContent = text;
+    modal.classList.add('show');
+  }
+
+  modalBtn.addEventListener('click', () => {
+    modal.classList.remove('show');
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('show');
+  });
+
+  // ===== 历史渲染 =====
+  function renderHistory() {
+    if (history.length === 0) {
+      historyList.innerHTML = '<li class="empty-note">还没有记录，扔一次试试？</li>';
+      return;
+    }
+
+    let html = '';
+    for (let i = history.length - 1; i >= 0; i--) {
+      const idx = i + 1;
+      const isHeads = history[i];
+      const label = isHeads ? '正面' : '反面';
+      const tagClass = isHeads ? 'tag-heads' : 'tag-tails';
+      const emoji = isHeads ? '🪙' : '⚫';
+      html += `<li class="history-item">
+        <span>第 ${idx} 次：${label} ${emoji}</span>
+        <span class="tag ${tagClass}">${isHeads ? '🔥' : '🌚'}</span>
+      </li>`;
+    }
+    historyList.innerHTML = html;
+  }
+
+  // ===== 按钮文字更新 =====
+  function updateButton() {
+    flipBtn.textContent = getButtonText();
+  }
+
+  // ===== 统计更新 =====
+  function updateStats() {
+    historyCount.textContent = `共 ${totalFlips} 次`;
+    streakCount.textContent = streak;
+
+    // 如果 streak >= 5 用橙色高亮
+    if (streak >= 5) {
+      streakIndicator.style.color = '#a88a5a';
+    } else {
+      streakIndicator.style.color = '#555';
+    }
+  }
+
+  // ===== 重置 =====
+  function resetAll() {
+    if (totalFlips === 0) return;
+    history = [];
+    streak = 0;
+    totalFlips = 0;
+    headsCount = 0;
+
+    // 硬币回到正面（初始状态）
+    coin.style.transform = 'rotateY(0deg)';
+    coinLabel.textContent = '正面';
+    coinLabel.className = 'coin-label is-heads';
+
+    updateStats();
+    renderHistory();
+    streakIndicator.style.color = '#555';
+
+    // 重置背景和按钮文字
+    document.body.style.background = '#141414';
+    flipBtn.textContent = '扔硬币';
+  }
+
+  // ===== 键盘支持 =====
+  document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      flip();
+    }
+  });
+
+  // ===== 事件绑定 =====
+  flipBtn.addEventListener('click', flip);
+  resetBtn.addEventListener('click', resetAll);
+</script>
+
+</body>
+</html>
