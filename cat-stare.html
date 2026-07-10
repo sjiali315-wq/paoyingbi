@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>猫的凝视挑战</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  body {
+    min-height: 100vh;
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  .container {
+    text-align: center;
+    position: relative;
+    width: 600px;
+    max-width: 95vw;
+  }
+
+  .header {
+    font-size: 22px;
+    color: #aaa;
+    letter-spacing: 6px;
+    margin-bottom: 24px;
+    font-weight: 300;
+    text-shadow: 0 0 20px rgba(100,100,200,0.3);
+    transition: color 0.3s;
+  }
+
+  /* ── 猫脸区域 ── */
+  .cat-area {
+    position: relative;
+    width: 420px;
+    height: 420px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow:
+      0 0 40px rgba(50,50,150,0.25),
+      0 0 80px rgba(50,50,150,0.10);
+    transition: box-shadow 0.3s, filter 0.3s;
+  }
+  .cat-area:hover {
+    box-shadow:
+      0 0 60px rgba(80,80,200,0.35),
+      0 0 120px rgba(80,80,200,0.15);
+  }
+
+  /* 猫照片 */
+  .cat-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  /* ── 呼吸动画容器 ── */
+  .cat-breath {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  /* ── CSS 猫脸备用（照片加载失败时显示） ── */
+  .cat-area .css-cat {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    display: none;
+  }
+  .cat-photo[src=""] + .css-cat,
+  .cat-photo.error + .css-cat { display: block; }
+
+  .css-cat-body {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 85%; height: 85%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 55%, #4a4a5a, #2a2a3a);
+    box-shadow: inset 0 -20px 40px rgba(0,0,0,0.3);
+  }
+  /* 猫耳朵 */
+  .css-cat-ear {
+    position: absolute;
+    top: 35px;
+    width: 0; height: 0;
+    border-left:  35px solid transparent;
+    border-right: 35px solid transparent;
+    border-bottom: 50px solid #3a3a4a;
+  }
+  .css-cat-ear.left  { left: 55px; transform: rotate(-12deg); }
+  .css-cat-ear.right { right: 55px; transform: rotate(12deg); }
+  /* 鼻子 */
+  .css-cat-nose {
+    position: absolute;
+    top: 53%; left: 50%;
+    transform: translateX(-50%);
+    width: 12px; height: 8px;
+    border-radius: 50%;
+    background: #e8a0a0;
+  }
+  /* 嘴巴 */
+  .css-cat-mouth {
+    position: absolute;
+    top: 57%; left: 50%;
+    transform: translateX(-50%);
+    width: 30px; height: 12px;
+    border-bottom: 3px solid #666;
+    border-radius: 0 0 50% 50%;
+  }
+  /* 胡子 */
+  .css-cat-whisker {
+    position: absolute;
+    top: 55%; width: 80px; height: 1px;
+    background: rgba(200,200,200,0.25);
+  }
+  .css-cat-whisker.l1 { left: 15px;  transform: rotate(-8deg);  }
+  .css-cat-whisker.l2 { left: 12px;  transform: rotate(4deg);   }
+  .css-cat-whisker.r1 { right: 15px; transform: rotate(8deg);   }
+  .css-cat-whisker.r2 { right: 12px; transform: rotate(-4deg);  }
+
+  .cat-area.gone .css-cat-body,
+  .cat-area.gone .css-cat-ear,
+  .cat-area.gone .css-cat-nose,
+  .cat-area.gone .css-cat-mouth,
+  .cat-area.gone .css-cat-whisker {
+    opacity: 0;
+    transition: opacity 0.8s;
+  }
+
+  /* ── 眼睛叠层 ── */
+  .eyes-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  .eye {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #f5f0e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.15);
+    transition: opacity 1.2s ease, background 1.2s ease, transform 1.2s ease;
+  }
+  .eye.breathing {
+    transition: transform 0.05s linear !important;
+  }
+  /* 瞳孔位置（对准猫照片中的实际眼睛位置） */
+  .eye.left  { top: 84px; left: 97px; }
+  .eye.right { top: 95px; left: 245px; }
+
+  .pupil {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #2a2a2a, #0a0a0a);
+    transition: transform 0.08s linear;
+    position: relative;
+  }
+  /* 高光 */
+  .pupil::after {
+    content: '';
+    position: absolute;
+    top: 5px; left: 7px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+  }
+
+  /* ── 表情 Emoji ── */
+  .expression-emoji {
+    position: absolute;
+    bottom: 45px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 48px;
+    pointer-events: none;
+    filter: drop-shadow(0 0 12px rgba(0,0,0,0.6));
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .expression-emoji.show {
+    opacity: 1;
+  }
+
+  /* ── 消息浮现 ── */
+  .message-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .message-overlay.show {
+    opacity: 1;
+  }
+  .message-text {
+    font-size: 52px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0,0,0,0.8);
+    letter-spacing: 4px;
+    transform: scale(0.8);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .message-overlay.show .message-text {
+    transform: scale(1);
+  }
+
+  /* 闪屏 */
+  .flash-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #fff;
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+  }
+  .flash-overlay.flash {
+    opacity: 0.85;
+  }
+
+  /* ── 底部计数器 ── */
+  .counter {
+    margin-top: 28px;
+    font-size: 15px;
+    color: #666;
+    letter-spacing: 2px;
+    font-weight: 300;
+    transition: color 0.3s;
+  }
+  .counter span { color: #888; font-weight: 600; }
+
+  /* ── 猫消失（彩蛋）—— 猫脸消失，只留下眼珠 ── */
+  .cat-area.gone .cat-photo,
+  .cat-area.gone .expression-emoji {
+    opacity: 0;
+    transition: opacity 0.8s;
+  }
+  .cat-area.gone {
+    background: transparent;
+    box-shadow: none;
+  }
+  /* 眼珠留着，变成漂浮状 */
+  .cat-area.gone .eyes-overlay {
+    pointer-events: none;
+  }
+  .cat-area.gone .eye {
+    box-shadow:
+      0 0 20px rgba(200,200,255,0.15),
+      inset 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .cat-area.gone .eye.left  { top: 84px; left: 97px; }
+  .cat-area.gone .eye.right { top: 95px; left: 245px; }
+
+  .easter-egg-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+    pointer-events: none;
+    text-shadow: 0 0 30px rgba(100,100,200,0.5);
+    white-space: nowrap;
+  }
+  .cat-area.gone .easter-egg-text {
+    opacity: 1;
+  }
+
+  /* ── 重置按钮（彩蛋后出现） ── */
+  .reset-btn {
+    display: none;
+    margin-top: 18px;
+    padding: 8px 24px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 2px;
+  }
+  .reset-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: #ccc;
+  }
+  .reset-btn.show { display: inline-block; }
+
+  /* ── 响应式 ── */
+  @media (max-width: 480px) {
+    .cat-area { width: 300px; height: 300px; }
+    .eye { width: 50px; height: 50px; }
+    .eye.left  { top: 55px; left: 63px; }
+    .eye.right { top: 62px; left: 170px; }
+    .pupil { width: 20px; height: 20px; }
+    .pupil::after { width: 6px; height: 6px; top: 3px; left: 5px; }
+    .expression-emoji { font-size: 36px; bottom: 30px; }
+    .header { font-size: 17px; }
+    .message-text { font-size: 32px; }
+    .easter-egg-text { font-size: 22px; }
+    .cat-area.gone .eye.left  { top: 55px;  left: 63px; }
+    .cat-area.gone .eye.right { top: 62px; left: 170px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <div class="header">👁 不要看猫的眼睛。</div>
+
+  <div class="cat-area" id="catArea">
+		    <div class="cat-breath" id="catBreath">
+    <img class="cat-photo" src="file:///Users/jiali/Downloads/3cee6f216bfcfc577e931632789c2b9c.jpg"
+         alt="猫" id="catPhoto"
+         onerror="this.classList.add('error'); this.src='';"
+         onload="this.classList.remove('error')">
+    <!-- CSS 猫脸备用 -->
+    <div class="css-cat">
+      <div class="css-cat-ear left"></div>
+      <div class="css-cat-ear right"></div>
+      <div class="css-cat-body"></div>
+      <div class="css-cat-nose"></div>
+      <div class="css-cat-mouth"></div>
+      <div class="css-cat-whisker l1"></div>
+      <div class="css-cat-whisker l2"></div>
+      <div class="css-cat-whisker r1"></div>
+      <div class="css-cat-whisker r2"></div>
+    </div>
+
+		    </div>
+    <div class="eyes-overlay" id="eyesOverlay">
+      <div class="eye left" id="leftEye">
+        <div class="pupil" id="leftPupil"></div>
+      </div>
+      <div class="eye right" id="rightEye">
+        <div class="pupil" id="rightPupil"></div>
+      </div>
+    </div>
+
+    <div class="expression-emoji" id="expressionEmoji"></div>
+
+    <!-- 彩蛋文字 -->
+    <div class="easter-egg-text">猫已经看穿你了。</div>
+  </div>
+
+  <div class="counter">已被发现：<span id="foundCount">0</span> 次</div>
+  <button class="reset-btn" id="resetBtn">重新开始</button>
+</div>
+
+<!-- 闪屏 -->
+<div class="flash-overlay" id="flashOverlay"></div>
+
+<!-- 消息浮现 -->
+<div class="message-overlay" id="messageOverlay">
+  <div class="message-text" id="messageText"></div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── DOM refs ──
+  const catArea      = document.getElementById('catArea');
+  const leftPupil    = document.getElementById('leftPupil');
+  const rightPupil   = document.getElementById('rightPupil');
+  const leftEye      = document.getElementById('leftEye');
+  const rightEye     = document.getElementById('rightEye');
+  const exprEmoji    = document.getElementById('expressionEmoji');
+  const flashOverlay = document.getElementById('flashOverlay');
+  const msgOverlay   = document.getElementById('messageOverlay');
+  const msgText      = document.getElementById('messageText');
+  const foundSpan    = document.getElementById('foundCount');
+  const resetBtn     = document.getElementById('resetBtn');
+  const catBreath    = document.getElementById('catBreath');
+
+  // ── 状态 ──
+  const EXPRESSIONS = ['😐', '😾', '😺', '😿', '😼'];
+  let foundCount    = 0;
+  let gazeTimer     = null;
+  let gazeSeconds   = 0;            // 当前连续凝视秒数
+  let isInCat       = false;
+  let isMsgShowing  = false;        // 防重入
+  let isCatAsleep   = false;        // 猫困了（10s 后闭眼）
+  let catGone       = false;        // 彩蛋已触发
+
+  // ── 呼吸动画状态 ──
+  const BREATH_AMP     = 0.04;      // 振幅，范围 [1.0, 1.08]
+  let breathPhase      = 0;         // 呼吸相位
+  let breathVelocity   = Math.PI;   // 当前角速度 (rad/s)
+  let breathRunning    = false;
+  let breathFrozen     = false;     // 打哈欠时冻结
+  let breathRAF        = null;
+  let lastBreathTime   = 0;
+
+  // ── 瞳孔跟踪 ──
+  const PUPIL_MAX_MOVE = 12;        // 瞳孔最大偏移 px
+
+  function updatePupils(mouseX, mouseY) {
+    // 猫睡着了 → 瞳孔关闭；猫消失了 → 眼珠依然跟踪（更诡异 👀）
+    if (isCatAsleep) return;
+
+    const rect = catArea.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height / 2;
+
+    // 鼠标相对猫区域中心的偏移（归一化到 [-1, 1]）
+    let dx = (mouseX - cx) / (rect.width  / 2);
+    let dy = (mouseY - cy) / (rect.height / 2);
+
+    // 限制范围
+    dx = Math.max(-1, Math.min(1, dx));
+    dy = Math.max(-1, Math.min(1, dy));
+
+    const px = dx * PUPIL_MAX_MOVE;
+    const py = dy * PUPIL_MAX_MOVE;
+
+    const transform = `translate(${px}px, ${py}px)`;
+    leftPupil.style.transform  = transform;
+    rightPupil.style.transform = transform;
+  }
+
+  // ── 呼吸动画系统 ──
+  function getBreathTargetVelocity(sec) {
+    // 0-3s: 正常 2s 周期 (π rad/s)
+    if (sec < 3) return Math.PI;
+    // 3-7s: 逐渐加速到 1s 周期 (2π rad/s)
+    if (sec < 7) {
+      const t = (sec - 3) / 4;
+      return Math.PI + Math.PI * t;
+    }
+    // 7-10s: 逐渐加速到 0.5s 周期 (4π rad/s)
+    if (sec < 10) {
+      const t = (sec - 7) / 3;
+      return 2 * Math.PI + 2 * Math.PI * t;
+    }
+    return 4 * Math.PI;
+  }
+
+  function setEyeBreathScale(scale) {
+    const s = scale.toFixed(4);
+    leftEye.style.transform  = `scale(${s})`;
+    rightEye.style.transform = `scale(${s})`;
+  }
+
+  function startBreathing() {
+    if (breathRunning) return;
+    breathRunning = true;
+    breathFrozen  = false;
+    breathPhase   = 0;
+    breathVelocity = Math.PI;
+    lastBreathTime = 0;
+    leftEye.classList.add('breathing');
+    rightEye.classList.add('breathing');
+    breathRAF = requestAnimationFrame(breathLoop);
+  }
+
+  function stopBreathing() {
+    breathRunning = false;
+    if (breathRAF) {
+      cancelAnimationFrame(breathRAF);
+      breathRAF = null;
+    }
+    leftEye.classList.remove('breathing');
+    rightEye.classList.remove('breathing');
+    if (catBreath) catBreath.style.transform = '';
+    leftEye.style.transform  = '';
+    rightEye.style.transform = '';
+  }
+
+  function freezeBreathing() {
+    // 定格在最大放大状态 (sin = 1 → scale = 1.08)
+    breathFrozen = true;
+    breathPhase = Math.PI / 2; // sin(π/2) = 1
+    const scale = 1 + BREATH_AMP * 2; // 1.08
+    if (catBreath) catBreath.style.transform = `scale(${scale.toFixed(4)})`;
+    setEyeBreathScale(scale);
+  }
+
+  function resumeBreathing() {
+    breathFrozen = false;
+    breathVelocity = Math.PI; // 恢复正常频率
+    // 从随机相位继续
+    breathPhase = Math.random() * Math.PI * 2;
+  }
+
+  function breathLoop(timestamp) {
+    if (!breathRunning) return;
+
+    if (!lastBreathTime) lastBreathTime = timestamp;
+    const dt = Math.min((timestamp - lastBreathTime) / 1000, 0.1);
+    lastBreathTime = timestamp;
+
+    if (!breathFrozen && !catGone) {
+      // 平滑过渡目标速度
+      const target = getBreathTargetVelocity(gazeSeconds);
+      breathVelocity += (target - breathVelocity) * Math.min(1, dt * 5);
+
+      breathPhase += breathVelocity * dt;
+
+      // scale = 1.04 + 0.04 * sin(phase) → 范围 [1.0, 1.08]
+      const scale = 1 + BREATH_AMP + BREATH_AMP * Math.sin(breathPhase);
+      const s = scale.toFixed(4);
+      if (catBreath) catBreath.style.transform = `scale(${s})`;
+      setEyeBreathScale(scale);
+    } else if (breathFrozen) {
+      // 保持冻结状态（已在 freezeBreathing 中设好）
+    }
+
+    breathRAF = requestAnimationFrame(breathLoop);
+  }
+
+  // ── 全局鼠标跟踪 ──
+  function onMouseMove(e) {
+    updatePupils(e.clientX, e.clientY);
+
+    // 判断鼠标是否在猫脸区域内（用于计时）
+    const rect = catArea.getBoundingClientRect();
+    const inside =
+      e.clientX >= rect.left && e.clientX <= rect.right &&
+      e.clientY >= rect.top  && e.clientY <= rect.bottom;
+
+    if (inside && !isInCat && !catGone && !isMsgShowing) {
+      isInCat = true;
+      startGazeTimer();
+    } else if (!inside && isInCat) {
+      isInCat = false;
+      resetGazeTimer();
+    }
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+
+  // ── 凝视计时 ──
+  function startGazeTimer() {
+    if (gazeTimer) return;
+    gazeSeconds = 0;
+    gazeTimer = setInterval(() => {
+      if (!isInCat || catGone) { resetGazeTimer(); return; }
+      gazeSeconds++;
+
+      if (gazeSeconds === 3) {
+        triggerFound();
+      }
+      if (gazeSeconds === 10) {
+        triggerYawn();
+      }
+    }, 1000);
+  }
+
+  function resetGazeTimer() {
+    if (gazeTimer) {
+      clearInterval(gazeTimer);
+      gazeTimer = null;
+    }
+    gazeSeconds = 0;
+  }
+
+  // ── 心理战台词库 ──
+  const PSY_WAR_LINES = [
+    '我就知道你会看。',
+    '人类，你输了。',
+    '你永远无法战胜一只猫。',
+    '__COUNT__',          // 特殊标记，运行时替换
+    '你盯得越久，输得越惨。',
+    '猫在看着你，猫一直在看着你。',
+    '承认吧，你控制不住自己。',
+    '你已经掉进猫的陷阱了。',
+    '你以为你能赢？',
+  ];
+
+  function pickPsychoLine(count) {
+    const raw = PSY_WAR_LINES[Math.floor(Math.random() * PSY_WAR_LINES.length)];
+    if (raw === '__COUNT__') {
+      return `第 ${count} 次了。你还学不会吗？`;
+    }
+    return raw;
+  }
+
+  // ── 被发现了（3秒） ──
+  function triggerFound() {
+    if (isMsgShowing) return;
+    isMsgShowing = true;
+
+    // 计数
+    foundCount++;
+    foundSpan.textContent = foundCount;
+
+    // 闪屏
+    flashOverlay.classList.add('flash');
+    setTimeout(() => flashOverlay.classList.remove('flash'), 200);
+
+    // 猫表情变凶
+    exprEmoji.textContent = '😾';
+    exprEmoji.classList.add('show');
+
+    // 随机选一句心理战台词
+    const line = pickPsychoLine(foundCount);
+
+    // 浮现消息
+    showMessage(line, 2000, () => {
+      exprEmoji.classList.remove('show');
+      isMsgShowing = false;
+
+      // 检查彩蛋
+      if (foundCount >= 5) {
+        triggerEasterEgg();
+      }
+    });
+  }
+
+  // ── 打哈欠（10秒） ──
+  function triggerYawn() {
+    if (isMsgShowing) return;
+    isMsgShowing = true;
+
+    // 呼吸定格在最大放大状态（猫深吸一口气后憋住）
+    freezeBreathing();
+
+    // 哈欠动画：先张嘴，再闭眼
+    exprEmoji.textContent = '😮';
+    exprEmoji.classList.add('show');
+
+    setTimeout(() => {
+      // 闭眼（隐藏瞳孔）
+      isCatAsleep = true;
+      leftPupil.style.transform  = 'scaleY(0)';
+      rightPupil.style.transform = 'scaleY(0)';
+      leftEye.style.background   = '#d0c8b8';
+      rightEye.style.background  = '#d0c8b8';
+
+      setTimeout(() => {
+        exprEmoji.textContent = '😿';
+        showMessage('算了，你赢了。猫要睡了。', 3000, () => {
+          exprEmoji.classList.remove('show');
+          isMsgShowing = false;
+          // 哈欠打完，呼吸恢复
+          resumeBreathing();
+        });
+      }, 600);
+    }, 1200);
+  }
+
+  // ── 消息工具 ──
+  function showMessage(text, duration, callback) {
+    msgText.textContent = text;
+    msgOverlay.classList.add('show');
+    setTimeout(() => {
+      msgOverlay.classList.remove('show');
+      if (callback) callback();
+    }, duration);
+  }
+
+  // ── 点击切换表情 ──
+  catArea.addEventListener('click', function(e) {
+    if (catGone) return;
+    // 不触发计时重置（但如果是点击在猫区域内也会触发 onMouseMove）
+    // 但我们不希望点击本身干扰计时，所以不改变 isInCat
+    // 随机选择一个表情
+    const pick = EXPRESSIONS[Math.floor(Math.random() * EXPRESSIONS.length)];
+    exprEmoji.textContent = pick;
+    exprEmoji.classList.add('show');
+    // 3秒后自动隐藏
+    clearTimeout(window._exprTimer);
+    window._exprTimer = setTimeout(() => {
+      exprEmoji.classList.remove('show');
+    }, 2000);
+  });
+
+  // ── 彩蛋 ──
+  function triggerEasterEgg() {
+    if (catGone) return;
+    catGone = true;
+    resetGazeTimer();
+    stopBreathing();
+    catArea.classList.add('gone');
+    exprEmoji.classList.remove('show');
+    resetBtn.classList.add('show');
+  }
+
+  // ── 重置 ──
+  resetBtn.addEventListener('click', function() {
+    catGone      = false;
+    isCatAsleep  = false;
+    isMsgShowing = false;
+    isInCat      = false;
+    gazeSeconds  = 0;
+    resetGazeTimer();
+
+    catArea.classList.remove('gone');
+    exprEmoji.classList.remove('show');
+    resetBtn.classList.remove('show');
+
+    // 恢复瞳孔和眼珠
+    leftPupil.style.transform  = '';
+    rightPupil.style.transform = '';
+    leftEye.style.background   = '';
+    rightEye.style.background  = '';
+    leftEye.style.transform    = '';
+    rightEye.style.transform   = '';
+    leftEye.classList.remove('breathing');
+    rightEye.classList.remove('breathing');
+
+    // 消息消失
+    msgOverlay.classList.remove('show');
+    flashOverlay.classList.remove('flash');
+
+    // 恢复呼吸
+    catBreath.style.transform = '';
+    resumeBreathing();
+    if (!breathRunning) startBreathing();
+  });
+
+  // ── 启动呼吸动画 ──
+  startBreathing();
+
+  // ── 初始化显示 ──
+  console.log('🐱 猫的凝视挑战已启动 — 不要看猫的眼睛！');
+})();
+</script>
+</body>
+</html>

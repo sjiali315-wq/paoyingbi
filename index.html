@@ -435,13 +435,13 @@
     <div class="controls">
       <button class="btn btn-stop" id="toggleBtn">■ STOP</button>
     </div>
-    <div class="countdown-bar" id="countdownBar">距离猫上班还有 05:00</div>
+    <div class="countdown-bar" id="countdownBar">距离起床还有 05:00</div>
   </div>
 </div>
 
 <!-- ===== 休息气泡（页面中央） ===== -->
 <div class="rest-bubble-overlay" id="restBubbleOverlay">
-  <div class="rest-bubble-box">别急，猫也要休息的。</div>
+  <div class="rest-bubble-box">已睡，勿扰</div>
 </div>
 
 <!-- ===== 右下角互动猫头像 ===== -->
@@ -600,14 +600,17 @@
   // ---- 关键词池 ----
   function pickKeyword() {
     const roll = Math.random() * 100;
-    if (roll < 15) return 'miao';
+    if (roll < 15) return '喵';
     if (roll < 25) return '圆宝';
     if (roll < 33) return '妈妈';
     if (roll < 41) return '姥姥';
-    if (roll < 46) return '这条不要，删掉';
-    if (roll < 51) return '今天晚餐是什么';
-    if (roll < 52) return '你盯着我看干什么？';
-    return null; // 剩下的概率不插入关键词
+    if (roll < 49) return '晓李姨姨';
+    if (roll < 57) return '佳丽姨姨';
+    if (roll < 62) return '这条不要，删掉';
+    if (roll < 67) return '今天晚餐是什么';
+    if (roll < 72) return '待办事项：1. 喂猫 2. 睡觉 3. 摸鱼';
+    if (roll < 75) return '你盯着我看干什么？';
+    return null; // 25% 概率不插入关键词
   }
 
   function randChar() {
@@ -827,7 +830,7 @@
     imageLoaded = false;
     bgImage.src = 'scene-off.webp';
 
-    screenAppend('\n🐱 猫下班了。明天再来。\n');
+    screenAppend('\n🐱 已睡，勿扰\n');
 
     countdownValue = 300;
     updateCountdownDisplay();
@@ -861,7 +864,7 @@
   function updateCountdownDisplay() {
     var m = Math.floor(countdownValue / 60);
     var s = countdownValue % 60;
-    countdownBar.textContent = '距离猫上班还有 ' +
+    countdownBar.textContent = '距离起床还有 ' +
       (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   }
 
