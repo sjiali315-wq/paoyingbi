@@ -450,7 +450,7 @@
     <div class="scene-label">◈ 偷 看 视 角 ◈</div>
     <img src="scene.webp" id="sceneImage" alt="Scene" style="display:none">
     <canvas id="sceneCanvas" width="480" height="400"></canvas>
-    <div class="scene-footer">🐱 圆宝正在替妈妈认真工作</div>
+    <div class="scene-footer" id="sceneFooter">🐱 圆宝正在替妈妈认真工作</div>
   </div>
 
   <!-- RIGHT -->
@@ -950,6 +950,7 @@
     bgImage.src = 'scene-off.webp';
 
     screenAppend('\n🐱 已睡，勿扰\n');
+    document.getElementById('sceneFooter').textContent = '🐱 已睡，勿扰';
     setCursorStyle('default');
 
     countdownValue = 300;
@@ -973,6 +974,7 @@
     bgImage.src = 'scene.webp';
 
     screenAppend('\n🐱 猫回来了。继续工作...\n');
+    document.getElementById('sceneFooter').textContent = '🐱 圆宝正在替妈妈认真工作';
     if (currentState && currentState.id) setState(STATE.WORK);
     running = true;
     tick();
