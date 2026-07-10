@@ -386,6 +386,55 @@
     pointer-events: none;
   }
 
+  /* ===== 自定义光标 ===== */
+  .custom-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    display: none;
+    will-change: transform;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+  }
+  .custom-cursor.active {
+    display: block;
+  }
+
+  /* 摸鱼 Zzz 动画 */
+  .cursor-zzz {
+    font-size: 20px;
+    color: #aaccff;
+    text-shadow: 0 0 8px rgba(100,180,255,0.5);
+    font-weight: bold;
+    transform: translate(-10px, -20px);
+  }
+  .cursor-zzz span {
+    display: inline-block;
+    opacity: 0;
+    animation: zzzFade 2s ease-in-out infinite;
+  }
+  .cursor-zzz span:nth-child(1) { font-size: 14px; animation-delay: 0s; }
+  .cursor-zzz span:nth-child(2) { font-size: 18px; animation-delay: 0.5s; }
+  .cursor-zzz span:nth-child(3) { font-size: 22px; animation-delay: 1.0s; }
+  @keyframes zzzFade {
+    0%   { opacity: 0; transform: translateY(4px) scale(0.8); }
+    30%  { opacity: 1; transform: translateY(0) scale(1); }
+    70%  { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-6px) scale(0.8); }
+  }
+
+  /* 暴躁猫爪印（作为光标持续跟随） */
+  .cursor-paw {
+    font-size: 26px;
+    transform: translate(-4px, -4px);
+    filter: drop-shadow(0 0 6px rgba(255,80,80,0.6));
+  }
+
+  /* 身体隐藏原生光标 */
+  body.cursor-hidden * {
+    cursor: none !important;
+  }
+
   @media (max-width: 800px) {
     .main { flex-direction: column; }
     .scene-panel { border-right: none; border-bottom: 3px solid #555; }
@@ -450,6 +499,12 @@
   <span class="cat-emoji" id="catEmoji">🐱</span>
 </div>
 
+<!-- ===== 自定义光标元素 ===== -->
+<div class="custom-cursor cursor-zzz" id="cursorZzz">
+  <span>Z</span><span>z</span><span>z</span>
+</div>
+<div class="custom-cursor cursor-paw" id="cursorPaw">🐾</div>
+
 <script>
 (function() {
   // ================================================================
@@ -505,6 +560,57 @@
   let moveHistory = [];
   let lastMX = 0, lastMY = 0, lastMT = 0;
 
+  // ---- 自定义光标 ----
+  const cursorZzz = document.getElementById('cursorZzz');
+  const cursorPaw = document.getElementById('cursorPaw');
+  let cursorStyle = 'default'; // 'default' | 'zzz' | 'paw'
+
+  function updateCursor(stateId) {
+    // 下班休息时不显示特殊光标
+    if (isOffWork) {
+      setCursorStyle('default');
+      return;
+    }
+    if (stateId === 'slack') {
+      setCursorStyle('zzz');
+    } else if (stateId === 'angry') {
+      setCursorStyle('paw');
+    } else {
+      setCursorStyle('default');
+    }
+  }
+
+  function setCursorStyle(style) {
+    if (style === cursorStyle) return;
+    cursorStyle = style;
+
+    cursorZzz.classList.remove('active');
+    cursorPaw.classList.remove('active');
+    document.body.classList.remove('cursor-hidden');
+
+    if (style === 'zzz') {
+      document.body.classList.add('cursor-hidden');
+      cursorZzz.classList.add('active');
+    } else if (style === 'paw') {
+      document.body.classList.add('cursor-hidden');
+      cursorPaw.classList.add('active');
+    }
+  }
+
+  // 鼠标移动时更新自定义光标位置
+  function onCursorMove(e) {
+    const x = e.clientX;
+    const y = e.clientY;
+    if (cursorStyle === 'zzz') {
+      cursorZzz.style.left = x + 'px';
+      cursorZzz.style.top = y + 'px';
+    } else if (cursorStyle === 'paw') {
+      cursorPaw.style.left = x + 'px';
+      cursorPaw.style.top = y + 'px';
+    }
+  }
+  document.addEventListener('mousemove', onCursorMove);
+
   // ================================================================
   // 状态切换
   // ================================================================
@@ -522,6 +628,8 @@
 
     // 更新 UI
     updateStatusUI();
+    // 更新光标样式
+    updateCursor(newState.id);
 
     // 更新监视器外观
     monitorBody.className = 'monitor-body' + (newState.id !== 'work' ? ' state-' + newState.id : '');
@@ -831,6 +939,7 @@
     bgImage.src = 'scene-off.webp';
 
     screenAppend('\n🐱 已睡，勿扰\n');
+    setCursorStyle('default');
 
     countdownValue = 300;
     updateCountdownDisplay();
@@ -1019,6 +1128,7 @@
   // 初始化
   // ================================================================
   updateStatusUI();
+  updateCursor(STATE.WORK.id);
   tick();
   startWorkTimer(); // 启动下班计时
 })();
