@@ -435,6 +435,70 @@
     cursor: none !important;
   }
 
+  /* ===== 哲学课堂入口遮罩 ===== */
+  .philosophy-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 10, 30, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .philosophy-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .philosophy-box {
+    background: #1e1e2e;
+    border: 2px solid #f0a030;
+    border-radius: 14px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 0 60px rgba(240, 160, 48, 0.15);
+  }
+  .philosophy-box .cat-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+  }
+  .philosophy-box h2 {
+    color: #f0a030;
+    font-size: 22px;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 10px;
+  }
+  .philosophy-box p {
+    color: #aaa;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .philosophy-btn {
+    background: #f0a030;
+    color: #1a1a2e;
+    border: none;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .philosophy-btn:hover {
+    background: #f5b840;
+    transform: scale(1.03);
+  }
+  .philosophy-btn:active {
+    transform: scale(0.97);
+  }
+
   @media (max-width: 800px) {
     .main { flex-direction: column; }
     .scene-panel { border-right: none; border-bottom: 3px solid #555; }
@@ -504,6 +568,16 @@
   <span>Z</span><span>z</span><span>z</span>
 </div>
 <div class="custom-cursor cursor-paw" id="cursorPaw">🐾</div>
+
+<!-- ===== 哲学课堂入口遮罩 ===== -->
+<div class="philosophy-overlay" id="philosophyOverlay">
+  <div class="philosophy-box">
+    <span class="cat-icon">🐱</span>
+    <h2>圆的哲学课堂</h2>
+    <p>你已获得圆的认可。点击下方进入。</p>
+    <button class="philosophy-btn" id="philosophyBtn">进入哲学课堂 →</button>
+  </div>
+</div>
 
 <script>
 (function() {
@@ -904,15 +978,20 @@
     catEmoji.textContent = faces[Math.floor(Math.random() * faces.length)];
   }
 
+  // ---- 哲学课堂双击计数 ----
+  let doubleClickCount = parseInt(localStorage.getItem('catPhiloDblClick') || '0', 10);
+  let philoTriggered = localStorage.getItem('catPhiloTriggered') === 'true';
+
   function handleCatDoubleClick() {
-    // 触发速度翻倍效果
+    // 已触发哲学课堂？不再响应双击
+    if (philoTriggered) return;
+
+    // 保留原有加速效果
     if (speedBoostTimer) {
       clearTimeout(speedBoostTimer);
       speedBoostTimer = null;
     }
     speedMultiplier = 0.5;
-    screenAppend('\n😿 猫被吓到了！！打字速度翻倍！！\n');
-    // 3秒后开始逐渐恢复
     speedBoostTimer = setTimeout(() => {
       let step = 0;
       const rampInterval = setInterval(() => {
@@ -926,6 +1005,52 @@
         }
       }, 500);
     }, 3000);
+
+    // 累积双击次数
+    doubleClickCount++;
+    localStorage.setItem('catPhiloDblClick', String(doubleClickCount));
+
+    // 根据次数显示不同消息
+    if (doubleClickCount === 1) {
+      screenAppend('\n😿 猫被吓到了！！打字速度翻倍！！\n');
+    } else if (doubleClickCount === 2) {
+      screenAppend('\n😼 你又戳我。你是不是想上课？\n');
+    } else if (doubleClickCount >= 3) {
+      screenAppend('\n🐱 好吧。你成功引起了我的注意。跟我来。\n');
+      // 触发哲学课堂入口
+      philoTriggered = true;
+      localStorage.setItem('catPhiloTriggered', 'true');
+      setTimeout(showPhiloOverlay, 800);
+    }
+  }
+
+  // ---- 哲学课堂入口 ----
+  const philoOverlay = document.getElementById('philosophyOverlay');
+  const philoBtn = document.getElementById('philosophyBtn');
+
+  function showPhiloOverlay() {
+    philoOverlay.classList.add('show');
+  }
+
+  philoBtn.addEventListener('click', () => {
+    // 检查文件是否存在
+    fetch('猫的哲学选择题.html', { method: 'HEAD' })
+      .then(res => {
+        if (res.ok) {
+          window.location.href = '猫的哲学选择题.html?from=typing';
+        } else {
+          alert('哲学课堂还没准备好。猫让你再等一等。');
+        }
+      })
+      .catch(() => {
+        alert('哲学课堂还没准备好。猫让你再等一等。');
+      });
+  });
+
+  // 页面加载时检查是否已触发过（跨页面刷新保持）
+  if (philoTriggered) {
+    // 已触发过，显示已达成但不再显示入口（如刷新，保持沉默）
+    doubleClickCount = 3;
   }
 
   // ================================================================

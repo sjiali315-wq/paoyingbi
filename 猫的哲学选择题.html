@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>猫的哲学选择题</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: #e8e0d0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    font-family: Georgia, 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(180,160,130,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 50%, rgba(180,160,130,0.12) 0%, transparent 60%);
+  }
+
+  /* ── 古籍外框 ── */
+  .book-container {
+    width: 700px;
+    max-width: 96vw;
+    background: #faf6ee;
+    border: 1px solid #c9b99a;
+    border-radius: 4px;
+    padding: 48px 56px 36px;
+    position: relative;
+    position: relative;
+    box-shadow:
+      0 2px 0 #d9cdb8,
+      0 4px 12px rgba(60,40,20,0.12),
+      inset 0 0 60px rgba(200,180,150,0.25);
+    transition: opacity 0.6s, transform 0.6s;
+  }
+
+  /* ── 顶部装饰线 ── */
+  .page-ornament {
+    text-align: center;
+    font-size: 14px;
+    color: #b8a88a;
+    letter-spacing: 8px;
+    margin-bottom: 10px;
+    user-select: none;
+  }
+  .page-ornament::before,
+  .page-ornament::after {
+    content: " ── ";
+    color: #d0c4a8;
+  }
+
+  /* ── 页眉 ── */
+  .page-header {
+    text-align: center;
+    font-size: 14px;
+    color: #8d7e64;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    font-style: italic;
+    user-select: none;
+    cursor: default;
+  }
+  .page-header .title-clickable {
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .page-header .title-clickable:hover {
+    color: #b38b5e;
+  }
+
+  /* ── 猫爪计数器点击彩蛋 ── */
+  .meow-indicator {
+    text-align: center;
+    font-size: 11px;
+    color: #c4a882;
+    margin-bottom: 6px;
+    opacity: 0;
+    transition: opacity 0.5s;
+    letter-spacing: 2px;
+    user-select: none;
+  }
+  .meow-indicator.show {
+    opacity: 1;
+  }
+
+  /* ── 20题提示 ── */
+  .easter-banner {
+    text-align: center;
+    font-size: 13px;
+    color: #b8926a;
+    padding: 6px 0 4px;
+    font-style: italic;
+    opacity: 0;
+    max-height: 0;
+    transition: opacity 0.6s, max-height 0.6s, margin 0.6s;
+    overflow: hidden;
+  }
+  .easter-banner.show {
+    opacity: 1;
+    max-height: 60px;
+    margin-bottom: 6px;
+  }
+
+  /* ── 来自打字页的欢迎语 ── */
+  .typing-welcome {
+    text-align: center;
+    font-size: 13px;
+    color: #7a9a6a;
+    padding: 8px 0 6px;
+    font-style: italic;
+    border-top: 1px dashed #d9cdb8;
+    border-bottom: 1px dashed #d9cdb8;
+    margin-bottom: 12px;
+    animation: welcomeFade 0.8s ease-out;
+  }
+  .typing-welcome .typing-welcome-icon {
+    margin-right: 6px;
+  }
+  @keyframes welcomeFade {
+    0%   { opacity: 0; transform: translateY(-8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 问题区域 ── */
+  .question-area {
+    text-align: center;
+    margin: 24px 0 20px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .question-number {
+    font-size: 13px;
+    color: #b8a88a;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    font-style: italic;
+  }
+
+  .question-text {
+    font-size: 28px;
+    color: #3e2d1e;
+    line-height: 1.5;
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    position: relative;
+    padding: 0 10px;
+  }
+  .question-text::before {
+    content: "❝";
+    font-size: 22px;
+    color: #c9b99a;
+    margin-right: 6px;
+    vertical-align: top;
+  }
+  .question-text::after {
+    content: "❞";
+    font-size: 22px;
+    color: #c9b99a;
+    margin-left: 6px;
+    vertical-align: bottom;
+  }
+
+  /* ── 选项 ── */
+  .options-container {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .option-btn {
+    position: relative;
+    background: none;
+    border: 1px solid #d0c4a8;
+    border-radius: 100px;
+    padding: 12px 32px 12px 48px;
+    font-size: 16px;
+    color: #5a4a38;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+    min-width: 140px;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: #efe8da;
+    border-color: #b8a88a;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(100,70,30,0.10);
+  }
+  .option-btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .option-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+    transform: none;
+  }
+
+  /* 猫爪印装饰 */
+  .option-btn::before {
+    content: "🐾";
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+  .option-btn:hover:not(:disabled)::before {
+    opacity: 0.9;
+  }
+
+  /* ── 响应区域 ── */
+  .response-area {
+    margin-top: 20px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .thinking-text {
+    font-size: 16px;
+    color: #b8a88a;
+    font-style: italic;
+    letter-spacing: 1px;
+    animation: pulse-text 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes pulse-text {
+    from { opacity: 0.5; }
+    to   { opacity: 1; }
+  }
+
+  .answer-quote {
+    font-size: 22px;
+    color: #4a3a28;
+    line-height: 1.6;
+    font-style: italic;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s, transform 0.5s;
+    max-width: 90%;
+    padding: 8px 16px;
+    border-left: 3px solid #d0c4a8;
+    margin: 0 auto;
+  }
+  .answer-quote.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .answer-quote::before {
+    content: "—— ";
+    color: #c9b99a;
+  }
+
+  .continue-btn {
+    margin-top: 16px;
+    background: none;
+    border: 1px solid #d0c4a8;
+    border-radius: 4px;
+    padding: 6px 24px;
+    font-size: 13px;
+    color: #8d7e64;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s, transform 0.4s, background 0.3s;
+  }
+  .continue-btn.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .continue-btn:hover {
+    background: #efe8da;
+    border-color: #b8a88a;
+  }
+
+  /* ── 底部 ── */
+  .page-footer {
+    margin-top: 32px;
+    text-align: center;
+    border-top: 1px solid #e0d6c4;
+    padding-top: 16px;
+  }
+
+  .footer-counter {
+    font-size: 12px;
+    color: #b8a88a;
+    letter-spacing: 1px;
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+
+  .reset-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: #c4b48a;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.3s;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 3px;
+  }
+  .reset-btn:hover {
+    color: #8d7e64;
+    background: #f0e8da;
+  }
+
+  .footer-quote {
+    text-align: center;
+    font-size: 11px;
+    color: #c9b99a;
+    margin-top: 24px;
+    font-style: italic;
+    letter-spacing: 1px;
+    user-select: none;
+  }
+
+  /* ── 50题终极模式 ── */
+  .enlightened-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #faf6ee;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    opacity: 0;
+    transition: opacity 1.5s;
+    z-index: 10;
+  }
+  .enlightened-overlay.show {
+    display: flex;
+    opacity: 1;
+  }
+
+  .enlightened-text {
+    font-size: 34px;
+    color: #3e2d1e;
+    line-height: 1.6;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+  }
+  .enlightened-sub {
+    font-size: 16px;
+    color: #b8a88a;
+    font-style: italic;
+    margin-bottom: 40px;
+  }
+  .enlightened-footer {
+    font-size: 12px;
+    color: #c4b48a;
+  }
+  .enlightened-footer .reset-btn {
+    font-size: 13px;
+    margin-top: 8px;
+    display: inline-block;
+  }
+
+  /* 终极模式下隐藏外层引用 */
+  body.enlightened-active .footer-quote {
+    display: none;
+  }
+  body.enlightened-active .book-container {
+    /* 终极模式书页变极简 */
+    background: #fcf8f0;
+    box-shadow: 0 1px 3px rgba(60,40,20,0.08);
+  }
+    font-size: 13px;
+    margin-top: 8px;
+    display: inline-block;
+  }
+
+  /* ── 响应式 ── */
+  @media (max-width: 600px) {
+    .book-container {
+      padding: 28px 20px 24px;
+    }
+    .question-text {
+      font-size: 22px;
+    }
+    .option-btn {
+      padding: 10px 20px 10px 38px;
+      font-size: 14px;
+      min-width: 120px;
+    }
+    .option-btn::before {
+      left: 14px;
+      font-size: 12px;
+    }
+    .options-container {
+      gap: 14px;
+    }
+    .answer-quote {
+      font-size: 18px;
+    }
+    .enlightened-text {
+      font-size: 24px;
+    }
+  }
+
+  /* ── 猫爪飘落（小彩蛋） ── */
+  .paw-fall {
+    position: fixed;
+    pointer-events: none;
+    font-size: 20px;
+    opacity: 0;
+    z-index: 999;
+    animation: pawFall 2.5s ease-out forwards;
+  }
+  @keyframes pawFall {
+    0%   { opacity: 0.7; transform: translateY(-20px) rotate(0deg); }
+    100% { opacity: 0;   transform: translateY(80vh) rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="book-container" id="bookContainer">
+  <!-- 顶部装饰 -->
+  <div class="page-ornament">❧</div>
+
+  <!-- 页眉 -->
+  <div class="page-header">
+    🐱 <span class="title-clickable" id="titleClick" title="点击探索更多">猫的哲学手册</span> · 第 <span id="questionIndex">1</span> 题
+  </div>
+
+  <!-- 真实回答模式指示 -->
+  <div class="meow-indicator" id="meowIndicator">✦ 真实回答模式 ✦</div>
+
+  <!-- 20题提醒 -->
+  <div class="easter-banner" id="easterBanner">
+    你已经思考了 20 个问题。猫觉得你该休息了。
+  </div>
+
+  <!-- 来自打字页的欢迎语 -->
+  <div class="typing-welcome" id="typingWelcome" style="display:none;">
+    <span class="typing-welcome-icon">🐱</span>
+    打字打累了？来这里坐坐。猫等你很久了。
+  </div>
+
+  <!-- 问题区域 -->
+  <div class="question-area" id="questionArea">
+    <div class="question-number" id="questionNumber">第 一 章</div>
+    <div class="question-text" id="questionText">加载中...</div>
+
+    <div class="options-container" id="optionsContainer">
+      <button class="option-btn" id="optA">我选择相信</button>
+      <button class="option-btn" id="optB">我选择怀疑</button>
+    </div>
+
+    <div class="response-area" id="responseArea">
+      <div class="thinking-text" id="thinkingText" style="display:none;">猫正在思考...</div>
+      <div class="answer-quote" id="answerQuote"></div>
+      <button class="continue-btn" id="continueBtn">继续</button>
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div class="page-footer">
+    <div class="footer-counter">已思考 <span id="countDisplay">0</span> 个问题</div>
+    <button class="reset-btn" id="resetBtn">⟳ 重新思考</button>
+  </div>
+
+  <!-- 50题终极覆盖 -->
+  <div class="enlightened-overlay" id="enlightenedOverlay">
+    <div class="enlightened-text">你已经超越了猫。<br>猫向你致敬。</div>
+    <div class="enlightened-sub">—— 终极认可 ——</div>
+    <div class="enlightened-footer">
+      <div class="footer-counter">已思考 <span id="countDisplayE">0</span> 个问题</div>
+      <button class="reset-btn" id="resetBtnE">⟳ 重新思考</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer-quote">你永远不知道猫在想什么，但你可以猜。</div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ── 问题库 ── */
+  const QUESTIONS = [
+    {
+      q: "今天要不要起床？",
+      opts: ["我选择起身", "我选择赖床"],
+      answers: [
+        "你确定吗？外面并没有值得你做的事。",
+        "正确的选择。猫也这么想。",
+        "猫觉得你还需要更多睡眠。",
+        "起床？猫从不起床，猫只是换个姿势。"
+      ]
+    },
+    {
+      q: "人生有没有意义？",
+      opts: ["有意义", "无意义"],
+      answers: [
+        "你问这个问题的时候，猫已经睡了。",
+        "有意义。意义就是：你负责开罐头，猫负责吃。",
+        "生如猫毛，飘忽不定。",
+        "人生的意义在猫眼里，就是一顿饱餐。"
+      ]
+    },
+    {
+      q: "我应该努力工作吗？",
+      opts: ["努力奋斗", "享受当下"],
+      answers: [
+        "猫不工作，但猫依然被爱。",
+        "努力是人类的诅咒，猫只努力晒太阳。",
+        "工作是为了买罐头，罐头是为了猫。",
+        "猫不努力，猫只是存在。"
+      ]
+    },
+    {
+      q: "我是不是想太多了？",
+      opts: ["继续想", "停下来"],
+      answers: [
+        "是的。猫从来不想，猫只是做。",
+        "想太多是人类的特权，猫羡慕你。",
+        "猫每天想的事情只有三件：吃、睡、窗外那只鸟。",
+        "想吧，反正猫也不会理你。"
+      ]
+    },
+    {
+      q: "幸福是什么？",
+      opts: ["追求幸福", "感受当下"],
+      answers: [
+        "幸福是下午三点的窗台，有阳光，没有人打扰。",
+        "幸福是你手里的罐头，和猫眼里的期待。",
+        "幸福是猫踩在你身上的重量。",
+        "幸福是你活着，猫也活着。"
+      ]
+    },
+    {
+      q: "为什么猫总是盯着窗外？",
+      opts: ["向外探索", "向内沉思"],
+      answers: [
+        "因为窗外有鸟，而鸟是猫的哲学老师。",
+        "猫在思考：如果窗是透明的，那自由是不是也是假的？",
+        "窗外有猫看不见的世界。",
+        "猫在等你回来，只是不想让你知道。"
+      ]
+    },
+    {
+      q: "我应该相信直觉吗？",
+      opts: ["相信", "怀疑"],
+      answers: [
+        "相信。但猫的直觉是：现在是吃饭时间。",
+        "直觉是猫教给人类的第一课——但人类总是忘记。",
+        "你的直觉没有猫的直觉准，但总比没有好。",
+        "相信直觉，但先给猫开罐头。"
+      ]
+    },
+    {
+      q: "孤独是什么？",
+      opts: ["逃避孤独", "接受孤独"],
+      answers: [
+        "孤独是你坐在沙发上，猫坐在另一个沙发上。",
+        "孤独是罐头打开了，猫却没有来。",
+        "孤独是人类发明的词，猫不需要。",
+        "孤独是当你发现猫才是你最好的朋友。"
+      ]
+    },
+    {
+      q: "有没有下辈子？",
+      opts: ["有", "没有"],
+      answers: [
+        "有。但下辈子你还是要给猫开罐头。",
+        "猫不确定。但如果有，猫希望你还是它的铲屎官。",
+        "猫有九条命，但人有下辈子吗？",
+        "不管有没有，先过好这辈子，给猫买最好的罐头。"
+      ]
+    },
+    {
+      q: "时间是什么？",
+      opts: ["追逐时间", "忘记时间"],
+      answers: [
+        "时间是猫从窗台走到食盆的距离。",
+        "时间是你等猫回来的那段空白。",
+        "时间对人类是线性的，对猫是循环的——吃、睡、再吃。",
+        "猫不在乎时间，因为猫拥有永恒。"
+      ]
+    },
+    {
+      q: "爱是什么？",
+      opts: ["付出", "占有"],
+      answers: [
+        "爱是你开罐头的动作，猫记住了。",
+        "爱是猫踩你键盘时，你没有生气。",
+        "爱是猫半夜跑酷，你依然爱它。",
+        "爱是你起床给猫倒粮，无论多困。"
+      ]
+    },
+    {
+      q: "睡觉和吃饭哪个更重要？",
+      opts: ["睡觉", "吃饭"],
+      answers: [
+        "睡觉更重要——因为梦里可能有罐头。",
+        "吃饭更重要——因为醒着才能确认罐头是真的。",
+        "猫选择都要。人类总是在二选一中浪费时间。",
+        "你问这个问题的时候，猫已经睡着了。"
+      ]
+    },
+    {
+      q: "自由是什么？",
+      opts: ["挣脱束缚", "安于当下"],
+      answers: [
+        "自由是猫想走的时候走，想留的时候留。",
+        "自由是你开门时猫不出去，关门时猫想出去。",
+        "真正的自由是猫即使被关在家里，也觉得自己拥有全世界。",
+        "自由是猫在你键盘上睡觉，你不敢动。"
+      ]
+    },
+    {
+      q: "为什么人类总是看手机？",
+      opts: ["为了连接", "为了逃避"],
+      answers: [
+        "猫不理解手机，但猫理解你需要被猫关注。",
+        "手机是人类的玩具，猫才是你的现实。",
+        "你看手机的时候，猫在看你。而猫的眼神比手机更有意义。",
+        "放下手机，猫在这里。"
+      ]
+    },
+    {
+      q: "猫为什么踩奶？",
+      opts: ["因为本能", "因为爱"],
+      answers: [
+        "踩奶是猫在回忆母亲的温度。你在某种程度上也是猫的母亲。",
+        "因为猫在测试你的柔软程度是否达标。",
+        "这是猫表达满足的方式——你的大腿被认证为安全区域。",
+        "猫在练习揉面团，你只是工具。"
+      ]
+    },
+    {
+      q: "命运是注定的吗？",
+      opts: ["是注定的", "由我决定"],
+      answers: [
+        "猫的命运是注定的：吃、睡、统治人类。你的呢？",
+        "命运是一杯水，你可以选择喝掉它，或者倒掉它。猫选择用爪子打翻它。",
+        "注定的部分是你会遇到猫，剩下的由你决定。",
+        "命运就像猫的尾巴——你追不上它，但它一直跟着你。"
+      ]
+    },
+    {
+      q: "沉默是金吗？",
+      opts: ["是金", "是逃避"],
+      answers: [
+        "沉默是猫最擅长的语言。人类说得太多，听得太少。",
+        "猫不说话，但猫已经告诉了你一切。你只是没有听懂。",
+        "沉默是金的——但猫觉得你该开罐头了。",
+        "猫可以一天不说话，你呢？"
+      ]
+    },
+    {
+      q: "什么是真正的陪伴？",
+      opts: ["形影不离", "心在一起"],
+      answers: [
+        "陪伴是猫在另一个房间，但你心里知道它在。",
+        "真正的陪伴是猫半夜跑酷后，还回来蹭你的手。",
+        "陪伴是你不说话，猫也不说话，但你们都不觉得尴尬。",
+        "猫陪伴你不是因为你给了它食物，而是因为它选择了你。"
+      ]
+    },
+    {
+      q: "猫为什么要打翻杯子？",
+      opts: ["它挡路了", "想做就做"],
+      answers: [
+        "因为杯子挡路了。",
+        "没有为什么。猫想做就做了。"
+      ]
+    },
+    {
+      q: "自由是什么？",
+      opts: ["推开窗", "关上锁"],
+      answers: [
+        "自由是窗台的门没有锁。",
+        "自由是罐头永远满的。"
+      ]
+    },
+    {
+      q: "我该不该相信命运？",
+      opts: ["相信", "假装不信"],
+      answers: [
+        "命运就是猫的尾巴——你以为你抓住了，其实没有。",
+        "信。但也要假装不信，这样比较酷。"
+      ]
+    },
+    {
+      q: "猫会做梦吗？",
+      opts: ["会", "不会"],
+      answers: [
+        "会。梦里全是打翻的罐头和追不到的鸟。",
+        "不会。猫不需要梦，猫的现实已经够好了。"
+      ]
+    },
+    {
+      q: "人类的烦恼，猫懂吗？",
+      opts: ["懂", "不懂"],
+      answers: [
+        "懂。但猫觉得，一个罐头就能解决的事，何必想那么多。",
+        "不懂。人类的烦恼太大了，装不进猫的脑袋。"
+      ]
+    },
+    {
+      q: "为什么要晒太阳？",
+      opts: ["因为温暖", "不需要理由"],
+      answers: [
+        "因为阳光是免费的。",
+        "因为猫在预演退休生活。"
+      ]
+    },
+    {
+      q: "猫为什么会踩键盘？",
+      opts: ["为了温暖", "为了关注"],
+      answers: [
+        "因为键盘很暖。",
+        "因为人类的注意力太分散了，猫在帮你集中。"
+      ]
+    },
+    {
+      q: "我该怎么选择？",
+      opts: ["选舒服的", "选对的"],
+      answers: [
+        "像猫一样。选最舒服的那个。",
+        "你选哪个，猫都不会反对。"
+      ]
+    },
+    {
+      q: "猫会后悔吗？",
+      opts: ["会", "不会"],
+      answers: [
+        "猫只后悔一件事——罐头开早了。",
+        "不后悔。后悔是人类的病，猫免疫。"
+      ]
+    },
+    {
+      q: "猫为什么总是盯着人类？",
+      opts: ["在评估你", "在信任你"],
+      answers: [
+        "因为你在动，猫在思考你值不值得信任。",
+        "因为你可能是开罐头的，所以猫需要评估你。"
+      ]
+    },
+    {
+      q: "为什么猫总是准时出现在饭点？",
+      opts: ["因为饥饿", "因为守时"],
+      answers: [
+        "因为猫有内建的时钟，叫做饥饿。",
+        "因为猫在测试人类是否守时。"
+      ]
+    },
+    {
+      q: "猫会原谅人类吗？",
+      opts: ["会", "不会"],
+      answers: [
+        "会。但猫不会忘记。",
+        "原谅是人类的说法，猫只是懒得计较。"
+      ]
+    },
+    {
+      q: "我要不要放下手机？",
+      opts: ["放下", "不放下"],
+      answers: [
+        "放下。猫想被看见。",
+        "不需要。猫也不介意你跟别人聊天。"
+      ]
+    },
+    {
+      q: "什么是幸福？",
+      opts: ["拥有什么", "放下什么"],
+      answers: [
+        "幸福是下午三点的窗台，有阳光，没有人打扰。",
+        "幸福是你手里的罐头，和猫眼里的期待。"
+      ]
+    },
+    {
+      q: "猫的理想是什么？",
+      opts: ["有理想", "没有理想"],
+      answers: [
+        "理想是让人类学会按时放饭。",
+        "没有理想。猫活着就是理想。"
+      ]
+    },
+    {
+      q: "人生有没有意义？",
+      opts: ["有", "没有"],
+      answers: [
+        "你问这个问题的时候，猫已经睡了。",
+        "有意义。意义就是：你负责开罐头，猫负责吃。"
+      ]
+    },
+    {
+      q: "为什么猫喜欢纸箱？",
+      opts: ["因为安全", "因为自由"],
+      answers: [
+        "因为纸箱里没有规则。",
+        "因为纸箱是猫的城堡，人类不懂。"
+      ]
+    },
+    {
+      q: "我应该熬夜吗？",
+      opts: ["熬", "不熬"],
+      answers: [
+        "熬。但不要打扰猫睡觉。",
+        "不熬。猫需要你白天清醒地开罐头。"
+      ]
+    },
+    {
+      q: "什么是真正的朋友？",
+      opts: ["给你罐头", "让你依靠"],
+      answers: [
+        "真正的朋友是给你带罐头的人。",
+        "真正的朋友是不问你就让你睡在膝盖上的人。"
+      ]
+    },
+    {
+      q: "猫会觉得人类很吵吗？",
+      opts: ["会", "不会"],
+      answers: [
+        "会。但猫习惯了，就像习惯风声。",
+        "不会。人类的声音很柔和，像摇篮曲。"
+      ]
+    },
+    {
+      q: "我今天应该出门吗？",
+      opts: ["别出门", "出门"],
+      answers: [
+        "别出门。外面的世界不如沙发。",
+        "随你。但请先开一个罐头再走。"
+      ]
+    },
+    {
+      q: "猫有梦想吗？",
+      opts: ["有", "没有"],
+      answers: [
+        "有。梦想是有一天罐头会自己打开。",
+        "没有。猫已经活成了梦想中的样子。"
+      ]
+    },
+    {
+      q: "人类应该向猫学习什么？",
+      opts: ["学会从容", "学会独立"],
+      answers: [
+        "学习如何不慌不忙地活着。",
+        "学习如何在你需要时出现，在你不需要时消失。"
+      ]
+    },
+    {
+      q: "猫为什么会踩奶？",
+      opts: ["因为本能", "因为爱"],
+      answers: [
+        "因为猫在回忆妈妈——那是人类不懂的温柔。",
+        "因为猫觉得你太软了，需要踩实一点。"
+      ]
+    },
+    {
+      q: "猫会寂寞吗？",
+      opts: ["会", "不会"],
+      answers: [
+        "会。但猫不会承认。",
+        "不会。猫的孤独是选修课。"
+      ]
+    },
+    {
+      q: "我什么时候才能像猫一样快乐？",
+      opts: ["不再追问时", "学会闭眼时"],
+      answers: [
+        "当你不再想『什么时候』的时候。",
+        "当你学会在阳光下闭眼的那一刻。"
+      ]
+    },
+    {
+      q: "猫为什么要看窗外？",
+      opts: ["在看世界", "在看你"],
+      answers: [
+        "因为窗外是另一个世界——猫在计划逃跑。",
+        "因为猫在看你能不能发现它在看什么。"
+      ]
+    },
+    {
+      q: "我应该现在就行动吗？",
+      opts: ["立刻行动", "再躺一会"],
+      answers: [
+        "现在行动——但猫建议你先躺十分钟。",
+        "等一下。猫还没决定要不要支持你。"
+      ]
+    },
+    {
+      q: "猫会害怕什么？",
+      opts: ["害怕失去", "害怕离开"],
+      answers: [
+        "猫只害怕罐头过期。",
+        "害怕人类突然站起来——因为那意味着可能要走。"
+      ]
+    },
+    {
+      q: "有没有什么比罐头更重要？",
+      opts: ["有", "没有"],
+      answers: [
+        "没有。",
+        "……没有。你问了一个没有答案的问题。"
+      ]
+    }
+  ];
+
+  /* ── 喵模式回答池 ── */
+  const MEOW_ANSWERS = ["喵。", "。", "……", "喵喵。", "……喵……", "？", "。喵。", "～喵～", "唔。", "……喵！"];
+
+  /* ── DOM 引用 ── */
+  const $ = id => document.getElementById(id);
+  const questionIndex  = $('questionIndex');
+  const questionNumber = $('questionNumber');
+  const questionText   = $('questionText');
+  const optA           = $('optA');
+  const optB           = $('optB');
+  const responseArea   = $('responseArea');
+  const thinkingText   = $('thinkingText');
+  const answerQuote    = $('answerQuote');
+  const continueBtn    = $('continueBtn');
+  const countDisplay   = $('countDisplay');
+  const countDisplayE  = $('countDisplayE');
+  const resetBtn       = $('resetBtn');
+  const resetBtnE      = $('resetBtnE');
+  const easterBanner   = $('easterBanner');
+  const titleClick     = $('titleClick');
+  const meowIndicator  = $('meowIndicator');
+  const enlightenedO   = $('enlightenedOverlay');
+  const bookContainer  = $('bookContainer');
+  const questionArea   = $('questionArea');
+
+  /* ── 状态 ── */
+  let state = {
+    count: 0,                    // 已回答问题数
+    questionNum: 0,              // 当前是第几个问题（显示用，从1开始递增）
+    currentQ: null,              // 当前问题对象
+    answered: false,             // 当前问题是否已答
+    meowMode: false,             // 真实回答模式
+    titleClicks: 0,              // 标题点击数
+    titleClickTimer: null,       // 标题点击重置定时器
+    thinkingTimer: null,         // 思考动画定时器
+    transitionTimer: null,       // 问题切换定时器
+    isResetting: false,          // 是否正在重置
+  };
+
+  const CHAPTERS = ['一','二','三','四','五','六','七','八','九','十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十'];
+
+  /* ── 工具函数 ── */
+  function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+  function pick(arr) { return arr[rand(0, arr.length - 1)]; }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  /* ── 获取答案 ── */
+  function getAnswer(question) {
+    if (state.meowMode) return pick(MEOW_ANSWERS);
+    return pick(question.answers);
+  }
+
+  /* ── 数字转罗马/中文序号 ── */
+  function getChapterLabel(n) {
+    const idx = n - 1;
+    if (idx < CHAPTERS.length) return '第 ' + CHAPTERS[idx] + ' 章';
+    return '第 ' + n + ' 题';
+  }
+
+  /* ── 检查彩蛋 ── */
+  function checkEasterEggs() {
+    // 20题
+    if (state.count >= 20) {
+      easterBanner.classList.add('show');
+    } else {
+      easterBanner.classList.remove('show');
+    }
+    // 50题 → 终极模式
+    if (state.count >= 50) {
+      enlightenedO.classList.add('show');
+      countDisplayE.textContent = state.count;
+      document.body.classList.add('enlightened-active');
+    } else {
+      enlightenedO.classList.remove('show');
+      document.body.classList.remove('enlightened-active');
+    }
+  }
+
+  /* ── 加载问题 ── */
+  function loadQuestion() {
+    // 检查是否到了终极模式
+    if (state.count >= 50) {
+      countDisplayE.textContent = state.count;
+      return;
+    }
+
+    state.questionNum++;
+    state.answered = false;
+    state.currentQ = pick(QUESTIONS);
+
+    // 更新显示
+    questionIndex.textContent = state.questionNum;
+    questionNumber.textContent = getChapterLabel(state.questionNum);
+    questionText.textContent = state.currentQ.q;
+    optA.textContent = state.currentQ.opts[0];
+    optB.textContent = state.currentQ.opts[1];
+
+    // 重置响应区
+    optA.disabled = false;
+    optB.disabled = false;
+    optA.style.opacity = '1';
+    optB.style.opacity = '1';
+    thinkingText.style.display = 'none';
+    answerQuote.classList.remove('show');
+    answerQuote.textContent = '';
+    continueBtn.classList.remove('show');
+    responseArea.style.minHeight = '80px';
+  }
+
+  /* ── 重置 ── */
+  function resetAll() {
+    if (state.isResetting) return;
+    state.isResetting = true;
+
+    // 清理定时器
+    if (state.thinkingTimer) { clearTimeout(state.thinkingTimer); state.thinkingTimer = null; }
+    if (state.transitionTimer) { clearTimeout(state.transitionTimer); state.transitionTimer = null; }
+
+    // 重置状态
+    state.count = 0;
+    state.questionNum = 0;
+    state.meowMode = false;
+    state.titleClicks = 0;
+    meowIndicator.classList.remove('show');
+
+    // 隐藏终极模式
+    enlightenedO.classList.remove('show');
+
+    // 更新计数
+    countDisplay.textContent = '0';
+    checkEasterEggs();
+
+    // 加载第一题
+    loadQuestion();
+    state.isResetting = false;
+  }
+
+  /* ── 回答处理 ── */
+  async function handleAnswer(/* chosenSide */) {
+    if (state.answered || state.count >= 50) return;
+    state.answered = true;
+
+    const question = state.currentQ;
+
+    // 禁用按钮
+    optA.disabled = true;
+    optB.disabled = true;
+
+    // 显示思考
+    thinkingText.style.display = 'block';
+    thinkingText.textContent = '猫正在思考';
+    responseArea.style.minHeight = '100px';
+    answerQuote.classList.remove('show');
+
+    // 思考动画：增加点
+    let dots = 0;
+    state.thinkingTimer = setInterval(() => {
+      dots = (dots + 1) % 4;
+      thinkingText.textContent = '猫正在思考' + '.'.repeat(dots);
+    }, 350);
+
+    // 随机等待 0.5~1.5 秒
+    const delay = 500 + Math.random() * 1000;
+    await sleep(delay);
+
+    // 清除思考动画
+    clearInterval(state.thinkingTimer);
+    state.thinkingTimer = null;
+    thinkingText.style.display = 'none';
+
+    // 显示答案
+    const answer = getAnswer(question);
+    answerQuote.textContent = answer;
+    answerQuote.classList.add('show');
+
+    // 增加计数
+    state.count++;
+    countDisplay.textContent = state.count;
+    checkEasterEggs();
+
+    // 显示继续按钮
+    continueBtn.classList.add('show');
+
+    // 如果用户没点击"继续"，2秒后自动继续
+    if (state.transitionTimer) clearTimeout(state.transitionTimer);
+    state.transitionTimer = setTimeout(() => {
+      nextQuestion();
+    }, 2500);
+  }
+
+  /* ── 下一题 ── */
+  function nextQuestion() {
+    if (state.transitionTimer) {
+      clearTimeout(state.transitionTimer);
+      state.transitionTimer = null;
+    }
+    // 淡出效果
+    questionArea.style.opacity = '0';
+    questionArea.style.transition = 'opacity 0.25s';
+    setTimeout(() => {
+      loadQuestion();
+      questionArea.style.opacity = '1';
+      questionArea.style.transition = 'opacity 0.4s';
+    }, 250);
+  }
+
+  /* ── 标题点击 ── */
+  function onTitleClick() {
+    state.titleClicks++;
+    if (state.titleClicks >= 5) {
+      state.meowMode = !state.meowMode;
+      state.titleClicks = 0;
+      meowIndicator.classList.toggle('show', state.meowMode);
+
+      // 如果当前已显示答案，更换为喵模式答案
+      if (state.answered && answerQuote.classList.contains('show')) {
+        const newAns = state.meowMode ? pick(MEOW_ANSWERS) : pick(state.currentQ.answers);
+        answerQuote.textContent = newAns;
+      }
+
+      // 飘落猫爪庆祝
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => spawnPaw(), i * 100);
+      }
+      return;
+    }
+    // 3秒内没达到5次则重置
+    if (state.titleClickTimer) clearTimeout(state.titleClickTimer);
+    state.titleClickTimer = setTimeout(() => {
+      state.titleClicks = 0;
+    }, 3000);
+  }
+
+  /* ── 猫爪飘落 ── */
+  function spawnPaw() {
+    const el = document.createElement('div');
+    el.className = 'paw-fall';
+    el.textContent = '🐾';
+    el.style.left = (10 + Math.random() * 80) + 'vw';
+    el.style.fontSize = (14 + Math.random() * 16) + 'px';
+    el.style.animationDuration = (2 + Math.random() * 2) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  /* ── 事件绑定 ── */
+  optA.addEventListener('click', () => handleAnswer('A'));
+  optB.addEventListener('click', () => handleAnswer('B'));
+
+  continueBtn.addEventListener('click', nextQuestion);
+
+  resetBtn.addEventListener('click', resetAll);
+  resetBtnE.addEventListener('click', resetAll);
+
+  titleClick.addEventListener('click', onTitleClick);
+
+  /* ── 键盘快捷键 ── */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '1') { optA.click(); return; }
+    if (e.key === '2') { optB.click(); return; }
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (continueBtn.classList.contains('show')) {
+        e.preventDefault();
+        continueBtn.click();
+      }
+    }
+  });
+
+  /* ── 来自打字页的欢迎语 ── */
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') === 'typing') {
+      const el = document.getElementById('typingWelcome');
+      if (el) el.style.display = 'block';
+    }
+  })();
+
+  /* ── 启动 ── */
+  loadQuestion();
+
+})();
+</script>
+
+</body>
+</html>
