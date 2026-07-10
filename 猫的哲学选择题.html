@@ -432,6 +432,52 @@
     0%   { opacity: 0.7; transform: translateY(-20px) rotate(0deg); }
     100% { opacity: 0;   transform: translateY(80vh) rotate(360deg); }
   }
+
+  /* ── 右下角返回猫头像 ── */
+  .back-cat {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    font-size: 48px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 9999;
+    user-select: none;
+    transition: transform 0.15s;
+  }
+  .back-cat:hover {
+    transform: scale(1.1);
+  }
+  .back-cat.shake {
+    animation: catShake 0.4s ease-in-out;
+  }
+  @keyframes catShake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+  .back-cat-tooltip {
+    position: absolute;
+    bottom: 56px;
+    right: 0;
+    background: #2a2a3a;
+    color: #ddd;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .back-cat-tooltip.show {
+    opacity: 1;
+  }
 </style>
 </head>
 <body>
@@ -1205,8 +1251,54 @@
   /* ── 启动 ── */
   loadQuestion();
 
+  // ── 右下角返回打字页猫头像 ──
+  const backCat = document.getElementById('backCat');
+  const backTooltip = document.getElementById('backCatTooltip');
+  let backCatClickTimer = null;
+
+  backCat.addEventListener('mouseenter', () => {
+    backTooltip.classList.add('show');
+  });
+  backCat.addEventListener('mouseleave', () => {
+    backTooltip.classList.remove('show');
+  });
+
+  backCat.addEventListener('click', () => {
+    if (backCatClickTimer) {
+      clearTimeout(backCatClickTimer);
+      backCatClickTimer = null;
+      // 双击
+      if (confirm('哲学课结束了？圆等你很久了。')) {
+        // 检查文件是否存在
+        fetch('猫打字.html', { method: 'HEAD' })
+          .then(res => {
+            if (res.ok) {
+              window.location.href = '猫打字.html?from=philosophy';
+            } else {
+              alert('打字页找不到了。猫迷路了。');
+              backCat.classList.add('shake');
+              setTimeout(() => backCat.classList.remove('shake'), 500);
+            }
+          })
+          .catch(() => {
+            alert('打字页找不到了。猫迷路了。');
+            backCat.classList.add('shake');
+            setTimeout(() => backCat.classList.remove('shake'), 500);
+          });
+      }
+    } else {
+      backCatClickTimer = setTimeout(() => {
+        backCatClickTimer = null;
+      }, 280);
+    }
+  });
 })();
 </script>
 
+<!-- 右下角返回打字页猫头像 -->
+<div class="back-cat" id="backCat">
+  🐱
+  <span class="back-cat-tooltip" id="backCatTooltip">双击回去打字</span>
+</div>
 </body>
 </html>
